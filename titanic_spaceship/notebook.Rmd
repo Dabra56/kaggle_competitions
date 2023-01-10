@@ -3,22 +3,154 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
 ```{r echo=FALSE}
-library()
+library(tidyverse)
+library(tidymodels)
+library(skimr)
+
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r }
 
 
+train <- read.csv(file="train.csv")
 
-/kaggle/input/spaceship-titanic/test.csv
+folds <- vfold_cv(train, v = 5)
+
+
+```
+
+## First look at the data 
+
+We need to predict if people were transported or not (Transported). We have 8 693 passengers. 
+
+### Character variables
+
+- They are leaving from 3 different home planet (HomePlanet) to go to 3 different destination planet (Destination).
+
+- They can do the transport either in or not in (CryoSleep). 35 % are in cryosleep
+
+- They have a cabin number and very few share their cabin with their family resulting in 6560 different (Cabin). 
+
+- They can have VIP status or not (VIP), but only 200 do. 
+
+- They all have different names (Name), but some share the same last name. We could create a famility variable although it could be bias. 
+
+### Numeric variables
+
+- We have a age variable, which median age of 27 and p75 of 38. Overall, a young crowd. 
+
+- We have 5 variables indicating how much someone spent in the different services of the flight. It would be more useful to know how much they spent overall indicating a level of wealth that would more likely still be under VIP status. 
+
+```{r }
+
+skim(train)
+
+train %>% 
+  group_by(VIP) %>% 
+  count()
+
+train %>% 
+  group_by(CryoSleep) %>% 
+  count()
+
+```
+
+### Link with outcome 
+
+- It would seem that VIP Status does not predict transport, in fact you are less likely to be transported if you are VIP. 
+
+- Cryosleep seems to predict whether or not they will be transported
+
+- 
+
+
+
+
+```{r }
+
+# train_test <- 
+#   train %>% 
+#     mutate(LastName = word(Name,2)) %>% 
+#   arrange(desc(LastName))
+#   
+
+train %>% 
+  filter(VIP != "") %>%   
+  count(Transported,VIP) %>% 
+      group_by(VIP) %>% 
+      mutate(proportion = n/sum(n)) %>% 
+      ggplot(aes(x=Transported,y=proportion)) +
+      geom_col() +
+      facet_wrap(~VIP,nrow=2) +
+   scale_x_discrete(guide = guide_axis(n.dodge=2)) + 
+   labs(title="VIP status")
+
+train %>% 
+  filter(CryoSleep != "") %>%   
+  count(Transported,CryoSleep) %>% 
+      group_by(CryoSleep) %>% 
+      mutate(proportion = n/sum(n)) %>% 
+      ggplot(aes(x=Transported,y=proportion)) +
+      geom_col() +
+      facet_wrap(~CryoSleep,nrow=2) +
+   scale_x_discrete(guide = guide_axis(n.dodge=2)) + 
+   labs(title="Cryosleep")
+
+# train %>% 
+#   filter({{var}} != "") %>%   
+#   count(Transported,{{var}}) %>% 
+#       group_by({{var}}) %>% 
+#       mutate(proportion = n/sum(n)) %>% 
+#       ggplot(aes(x=Transported,y=proportion)) +
+#       geom_col() +
+#       facet_wrap(~{{var}},nrow=2) +
+#    scale_x_discrete(guide = guide_axis(n.dodge=2)) + 
+#    labs(title=title)
+#   
+# Feature engineering
+
+
+ # -------Extracting Last -------# 
+# train_test <- 
+#   train %>% 
+#     mutate(LastName = word(Name,2)) %>% 
+#   arrange(desc(LastName))
+# #   
+#     train %>% 
+#       mutate(RoomService = case_when(
+#         CryoSleep== "True" ~ 0, 
+#         TRUE ~  RoomService), 
+#         FoodCourt = case_when(
+#         CryoSleep== "True" ~ 0, 
+#         TRUE ~  FoodCourt), 
+#         ShoppingMall = case_when(
+#         CryoSleep== "True" ~ 0, 
+#         TRUE ~  ShoppingMall), 
+#         Spa = case_when(
+#         CryoSleep== "True" ~ 0, 
+#         TRUE ~  Spa), 
+#         VRDeck = case_when(
+#         CryoSleep== "True" ~ 0, 
+#         TRUE ~  VRDeck), 
+#        RoomService = case_when(is.na(RoomService) ~ 0 , 
+#                                TRUE ~ RoomService),
+#         FoodCourt = case_when(is.na(FoodCourt) ~ 0 , 
+#                                TRUE ~ FoodCourt),
+#         ShoppingMall = case_when(is.na(ShoppingMall) ~ 0 , 
+#                                TRUE ~ ShoppingMall),
+#          Spa = case_when(is.na(Spa) ~ 0 , 
+#                                TRUE ~ Spa),
+#           VRDeck = case_when(is.na(VRDeck) ~ 0 , 
+#                                TRUE ~ VRDeck),
+#         AllSpending = RoomService + FoodCourt + ShoppingMall + Spa + VRDeck) 
+#  #      mutate(CryoSleep = case_when(CryoSleep=="" & AllSpending ~ "True", TRUE ~ CryoSleep))) %>% 
+   #   filter(CryoSleep=="")
+
+  
+```
+
+
 
 
